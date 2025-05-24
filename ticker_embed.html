@@ -51,12 +51,12 @@
 
     <script>
         // START ticker.js content
-      document.addEventListener('DOMContentLoaded', () => {
+ document.addEventListener('DOMContentLoaded', () => {
     const tickerElement = document.getElementById('spectralTicker');
     let messages = [];
     let currentMessageIndex = 0;
     let animationDuration = 15;
-    const pauseDuration = 10000; // 10 minute pause
+    const pauseDuration = 5000; // Your desired pause
     const pixelsPerSecond = 80;
 
     // --- Configuration for Message Source based on Date ---
@@ -69,21 +69,20 @@
 
     // --- DEFINE ALL YOUR MESSAGE FILE URLs HERE ---
     // IMPORTANT: Replace with your actual GitHub Pages URLs!
+    const halloweenMessagesUrl = 'https://YOUR_USERNAME.github.io/ticker-for-site/messages_halloween.json';
+    const christmasMessagesUrl = 'https://YOUR_USERNAME.github.io/ticker-for-site/messages_christmas.json';
+    const defaultMessagesUrl = 'https://YOUR_USERNAME.github.io/ticker-for-site/messages_default.json'; // If you want a fallback not tied to mist
 
-    const halloweenMessagesUrl = 'https://remcdowell.github.io/ticker-for-site/messages_halloween.json';
-    const christmasMessagesUrl = 'https://remcdowell.github.io/ticker-for-site/messages_christmas.json';
-    const defaultMessagesUrl = 'https://remcdowell.github.io/ticker-for-site/messages_default.json'; // If you want a fallback not tied to mist
-     
     // Array of your Mist-themed message URLs
-            const mistMessagesUrls = [
-                'https://remcdowell.github.io/ticker-for-site/messages_mist_light.json',
-                                     'https://remcdowell.github.io/ticker-for-site/messages_mist_regular.json',
-                                      'https://remcdowell.github.io/ticker-for-site/messages_mist_heavy.json',
-                                      'https://remcdowell.github.io/ticker-for-site/messages_mist_errie.json'
-                                              // Add more mist JSON URLs here as you create them!
+    const mistMessagesUrls = [
+        'https://YOUR_USERNAME.github.io/ticker-for-site/messages_mist_light.json',  // <--- PASTE YOUR LIGHT MIST URL HERE
+        'https://YOUR_USERNAME.github.io/ticker-for-site/messages_mist_regular.json', // If you have a 'regular' mist
+        'https://YOUR_USERNAME.github.io/ticker-for-site/messages_mist_heavy.json',  // <--- PASTE YOUR HEAVY MIST URL HERE
+        'https://YOUR_USERNAME.github.io/ticker-for-site/messages_mist_eerie.json'   // <--- PASTE YOUR EERIE MIST URL HERE
+        // Add more mist JSON URLs here as you create them!
     ];
 
-   
+
     // --- Holiday Date Logic ---
     // Halloween: October 25th - November 3rd (adjust as desired)
     if (month === 10 && day >= 25 || month === 11 && day <= 3) {
