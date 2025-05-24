@@ -51,89 +51,133 @@
 
     <script>
         // START ticker.js content
-        document.addEventListener('DOMContentLoaded', () => {
-            const tickerElement = document.getElementById('spectralTicker');
-            let messages = [];
-            let currentMessageIndex = 0;
-            let animationDuration = 15;
-            const pauseDuration = 10000; // 10 seconds pause
-            const pixelsPerSecond = 80;
+      document.addEventListener('DOMContentLoaded', () => {
+    const tickerElement = document.getElementById('spectralTicker');
+    let messages = [];
+    let currentMessageIndex = 0;
+    let animationDuration = 15;
+    const pauseDuration = 10000; // 10 minute pause
+    const pixelsPerSecond = 80;
 
-            // --- Configuration for Message Source ---
-            // This is the CRITICAL part for Google Sites
-            // You CANNOT rely on relative paths like 'messages.json' from within the iframe
-            // You MUST use an ABSOLUTE URL for your message source.
-            const messageSourceUrl = 'https://remcdowell.github.io/ticker-for-site/messages.json'; // <--- IMPORTANT: Change this!
-            const messageSourceType = 'json'; // Or 'text'
+    // --- Configuration for Message Source based on Date ---
+    const today = new Date();
+    const month = today.getMonth() + 1; // getMonth() returns 0-11, so add 1 for 1-12
+    const day = today.getDate();
+    const year = today.getFullYear(); // We need the year to calculate day of year
 
-            // Example for a GitHub Gist raw URL:
-            // const messageSourceUrl = 'https://gist.githubusercontent.com/YOUR_USERNAME/YOUR_GIST_ID/raw/YOUR_FILENAME.json';
-            // Example for a Dropbox direct link:
-            // const messageSourceUrl = 'https://dl.dropboxusercontent.com/s/YOUR_SHARED_LINK_ID/messages.json';
+    let selectedMessageSourceUrl;
+
+    // --- DEFINE ALL YOUR MESSAGE FILE URLs HERE ---
+    // IMPORTANT: Replace with your actual GitHub Pages URLs!
+
+    const halloweenMessagesUrl = 'https://remcdowell.github.io/ticker-for-site/messages_halloween.json';
+    const christmasMessagesUrl = 'https://remcdowell.github.io/ticker-for-site/messages_christmas.json';
+    const defaultMessagesUrl = 'https://remcdowell.github.io/ticker-for-site/messages_default.json'; // If you want a fallback not tied to mist
+     
+    // Array of your Mist-themed message URLs
+            const mistMessagesUrls = [
+                'https://remcdowell.github.io/ticker-for-site/messages_mist_light.json',
+                                     'https://remcdowell.github.io/ticker-for-site/messages_mist_regular.json',
+                                      'https://remcdowell.github.io/ticker-for-site/messages_mist_heavy.json',
+                                      'https://remcdowell.github.io/ticker-for-site/messages_mist_errie.json'
+                                              // Add more mist JSON URLs here as you create them!
+    ];
+
+   
+    // --- Holiday Date Logic ---
+    // Halloween: October 25th - November 3rd (adjust as desired)
+    if (month === 10 && day >= 25 || month === 11 && day <= 3) {
+        selectedMessageSourceUrl = halloweenMessagesUrl;
+    }
+    // Christmas: December 15th - January 5th (adjust as desired)
+    else if (month === 12 && day >= 15 || month === 1 && day <= 5) {
+        selectedMessageSourceUrl = christmasMessagesUrl;
+    }
+    // --- Regular Days: Apply Daily Mist Randomization ---
+    else {
+        // Calculate Day of Year to ensure consistent choice for the whole day
+        // This is a simple way to get a number unique to each day of the year
+        const startOfYear = new Date(year, 0, 0);
+        const diff = today - startOfYear; // Difference in milliseconds
+        const oneDay = 1000 * 60 * 60 * 24; // Milliseconds in a day
+        const dayOfYear = Math.floor(diff / oneDay);
+
+        // Use dayOfYear to pick a "random" index from the mist messages array
+        // The result will be the same for the entire day, but different tomorrow
+        const randomIndex = dayOfYear % mistMessagesUrls.length;
+        selectedMessageSourceUrl = mistMessagesUrls[randomIndex];
+
+        // Fallback if no mist messages are defined (shouldn't happen if you fill the array)
+        if (mistMessagesUrls.length === 0) {
+            selectedMessageSourceUrl = defaultMessagesUrl;
+        }
+    }
+
+    const messageSourceUrl = selectedMessageSourceUrl;
+    const messageSourceType = 'json'; // Assuming all your message files are JSON
 
 
-            async function fetchMessages() {
-                try {
-                    const response = await fetch(messageSourceUrl);
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-
-                    if (messageSourceType === 'json') {
-                        const data = await response.json();
-                        messages = Array.isArray(data) ? data : data.messages || [];
-                    } else if (messageSourceType === 'text') {
-                        const text = await response.text();
-                        messages = text.split('\n').filter(line => line.trim() !== '');
-                    }
-
-                    if (messages.length > 0) {
-                        startTicker();
-                    } else {
-                        tickerElement.textContent = "No spectral transmissions found. Awaiting signals...";
-                    }
-
-                } catch (error) {
-                    console.error("Failed to fetch spectral messages:", error);
-                    tickerElement.textContent = "Error: Failed to receive spectral transmissions. Signal lost.";
-                }
+    async function fetchMessages() {
+        try {
+            const response = await fetch(messageSourceUrl);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status} - Check URL or file existence: ${messageSourceUrl}`);
             }
 
-            function animateMessage() {
-                if (messages.length === 0) return;
+            if (messageSourceType === 'json') {
+                const data = await response.json();
+                messages = Array.isArray(data) ? data : data.messages || [];
+            } else if (messageSourceType === 'text') {
+                const text = await response.text();
+                messages = text.split('\n').filter(line => line.trim() !== '');
+            }
 
-                const message = messages[currentMessageIndex];
-                tickerElement.textContent = message;
+            if (messages.length > 0) {
+                startTicker();
+            } else {
+                tickerElement.textContent = `No spectral transmissions found for ${messageSourceUrl.split('/').pop().replace('messages_', '').replace('.json', '')}. Awaiting signals...`;
+            }
 
-                tickerElement.style.transform = 'translateX(100%)';
-                tickerElement.style.animation = 'none';
+        } catch (error) {
+            console.error("Failed to fetch spectral messages:", error);
+            tickerElement.textContent = `Error: Failed to receive spectral transmissions. Signal lost. (${error.message})`;
+        }
+    }
 
-                // Use a small timeout to ensure the browser registers the style change before animating
-                // This can help with initial positioning glitches
+    function animateMessage() {
+        if (messages.length === 0) return;
+
+        const message = messages[currentMessageIndex];
+        tickerElement.textContent = message;
+
+        tickerElement.style.transform = 'translateX(100%)';
+        tickerElement.style.animation = 'none';
+
+        setTimeout(() => {
+            const containerWidth = tickerElement.parentElement.offsetWidth;
+            const contentWidth = tickerElement.scrollWidth;
+            const totalDistance = containerWidth + contentWidth;
+
+            animationDuration = totalDistance / pixelsPerSecond;
+
+            tickerElement.style.animation = `scrollLeft ${animationDuration}s linear forwards`;
+
+            tickerElement.onanimationend = () => {
                 setTimeout(() => {
-                    const containerWidth = tickerElement.parentElement.offsetWidth;
-                    const contentWidth = tickerElement.scrollWidth;
-                    const totalDistance = containerWidth + contentWidth;
+                    currentMessageIndex = (currentMessageIndex + 1) % messages.length;
+                    animateMessage();
+                }, pauseDuration);
+            };
+        }, 50);
+    }
 
-                    animationDuration = totalDistance / pixelsPerSecond;
+    function startTicker() {
+        animateMessage();
+    }
 
-                    tickerElement.style.animation = `scrollLeft ${animationDuration}s linear forwards`;
+    fetchMessages();
+});
 
-                    tickerElement.onanimationend = () => {
-                        setTimeout(() => {
-                            currentMessageIndex = (currentMessageIndex + 1) % messages.length;
-                            animateMessage();
-                        }, pauseDuration);
-                    };
-                }, 50); // Small delay to ensure render tree updates
-            }
-
-            function startTicker() {
-                animateMessage();
-            }
-
-            fetchMessages();
-        });
         // END ticker.js content
     </script>
 
